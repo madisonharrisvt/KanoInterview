@@ -2,5 +2,9 @@ extends layout
 
 block content
   h1= title
-  p Welcome to #{title}
-  h2 Help me i am #{title}
+  p Welcome to #{title}!  Please select a user you'd like to impersonate today:
+  
+  ul
+  each user in users
+    li 
+      a(href="/user/"+user.id) #{user.name}

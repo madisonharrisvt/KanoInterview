@@ -1,17 +1,11 @@
-/**
- * A sample set of calls to provide usage examples of the included supporting classes.
- */
+var express = require('express');
+var Database = require("../lib/Database");
 
-const Database = require("../lib/Database");
-
-// Instantiate a new database
-const db = new Database();
+var router = express.Router();
+var db = new Database();
 
 // Get a reference to the user collection
-const user = db.collection('user');
-
-var express = require('express');
-var router = express.Router();
+var user = db.collection('user');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {

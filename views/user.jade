@@ -3,7 +3,25 @@ extends layout
 block content
   h1= title
   img(src=img)
+
+  h2="Friends"
   ul
   each friend in friends
     li 
       a(href="/user/"+friend.id) #{friend.name}
+
+  h2="Gifts Sent"
+  ul
+  if giftsSent != undefined && giftsSent.length > 0
+    each gift in giftsSent
+      table 
+        tr
+          td From: #{gift.from.name}
+        tr
+          td To: #{gift.to.name}
+        tr
+          td Item: #{gift.item.name}
+        tr
+          td Date Sent: #{gift.date}
+  else
+    p No gifts sent!

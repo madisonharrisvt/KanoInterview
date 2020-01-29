@@ -38,6 +38,11 @@ block content
                 input(type="submit" value="Receive")
               else
                 input(type="submit" value="Receive" disabled="diabled")
+    form(action=`/all-gifts/${user.id}`, method="post")
+      if allowAllGiftReceive
+        input(type="submit" value="Receive All")
+      else
+        input(type="submit" value="Receive All" disabled="diabled")
   else
     p No gifts received!
 

@@ -22,18 +22,14 @@ router.get('/:id', function(req, res, next) {
 
   // load user's friends
   var user = userResult.entity;
-  var friends = loadFriendCompositesByUser(user);
-  var giftsSent = loadGiftsSentByUser(user);
-  var giftsReceived = loadGiftsReceivedByUser(user);
-  var allowAllGiftReceive = anyGiftUnreceived(giftsReceived);
-  var allowAllGiftSend = anyGiftUnsentToAllFriendsTodayByUser(friends, user);
+  var friendGiftItemComposites = loadFriendGiftItemCompositesByUser(user);
+  var allowAllGiftReceive = anyGiftUnreceived(friendGiftItemComposites);
+  var allowAllGiftSend = anyGiftUnsentToday(friendGiftItemComposites);
 
   res.render('user', { 
     user: user, 
     img: user.img, 
-    friends: friends, 
-    giftsSent: giftsSent, 
-    giftsReceived: giftsReceived, 
+    friendGiftItemComposites: friendGiftItemComposites, 
     allowAllGiftReceive: allowAllGiftReceive,
     allowAllGiftSend: allowAllGiftSend
   });
@@ -42,69 +38,25 @@ router.get('/:id', function(req, res, next) {
 /******************************************************
  *  Helper functions
  *******************************************************/
-
-// load all Gifts from User id regardless if result is empty/null/undefinied/incorrect
-function loadGiftsSentByUser(user) {
-  var gifts = giftDb.find( { from: user.id });
-  
-  return loadGiftCompositesByGifts(gifts);
-}
-
-// load all Gifts to User id regardless if result is empty/null/undefinied/incorrect
-function loadGiftsReceivedByUser(user) {
-  var gifts = giftDb.find( { to: user.id });
-  
-  return loadGiftCompositesByGifts(gifts);
-}
-
-function anyGiftUnreceived(gifts) {
-  var hasGiftUnreceived = false;
-
-  gifts.forEach( g => {
-    if (!hasGiftUnreceived && !g.received) {
-      hasGiftUnreceived = true;
-    }
-  });
-
-  return hasGiftUnreceived;
-}
-
-function giftUnsentToFriendTodayByUser(friend, user) {
-  var today = new Date();
-  var formattedToday = today.toLocaleDateString("en-US");
-  var sentGift = giftDb.find({ from: user.id, to: friend.id, date: formattedToday });
-
-  return sentGift != undefined && sentGift.length === 0
-}
-
-function anyGiftUnsentToAllFriendsTodayByUser(friends, user) {
-  var hasGiftUnsent = false;
-
-  friends.forEach( f => {
-    var hasGiftUnsentToFriendToday = giftUnsentToFriendTodayByUser(f, user);
-
-    if (!hasGiftUnsent && hasGiftUnsentToFriendToday) {
-      hasGiftUnsent = true;
-    }
-  });
-
-  return hasGiftUnsent;
-}
-
-function loadFriendCompositesByUser(user) {
+function loadFriendGiftItemCompositesByUser(user) {
   var friendIds = user.friends;
   var friendComposites = [];
 
-  // load friends by user friend IDs
-  friendIds.forEach( id => {
-    var friendResult = userDb.findFirstByID(id);
+  friendIds.forEach(fid => {
+    var friendResult = userDb.findFirstByID(fid);
 
-    // validate
     if (friendResult.success) {
       var friend = friendResult.entity;
-      var hasGiftUnsentToFriendToday = giftUnsentToFriendTodayByUser(friend, user);
-      var friendComposite = friend;
-      friendComposite["hasGiftUnsent"] = hasGiftUnsentToFriendToday;
+      var giftItemCompositesSentToFriend = loadAllGiftItemCompositesFromFirstUserToSecondUser(user, friend);
+      var giftItemCompositesSentByFriend = loadAllGiftItemCompositesFromFirstUserToSecondUser(friend, user);
+      var giftHasBeenSentToFriendToday = giftHasBeenSentToday(giftItemCompositesSentToFriend);
+
+      var friendComposite = {
+        friend: friend,
+        giftItemCompositesSentToFriend: giftItemCompositesSentToFriend,
+        giftItemCompositesSentByFriend: giftItemCompositesSentByFriend,
+        giftHasBeenSentToFriendToday: giftHasBeenSentToFriendToday
+      }
 
       friendComposites.push(friendComposite);
     }
@@ -113,31 +65,73 @@ function loadFriendCompositesByUser(user) {
   return friendComposites;
 }
 
-function loadGiftCompositesByGifts(gifts) {
-  var giftComposites = [];
-  
-  // don't process gifts if they don't exist
-  if (gifts == undefined || gifts.length === 0) {
-    return gifts;
+function loadAllGiftItemCompositesFromFirstUserToSecondUser(firstUser, secondUser) {
+  var giftsResult = giftDb.find({ from: firstUser.id, to: secondUser.id });
+  var giftItemComposites = [];
+
+  if (giftsResult != undefined && giftsResult.length !== 0) {
+    var gifts = giftsResult;
+
+    gifts.forEach( g => {
+      var itemResult = itemDb.findFirstByID(g.item)
+      if (itemResult.success) {
+        var item = itemResult.entity;
+
+        var giftItemcomposite = {
+          gift: g,
+          item: item
+        };
+
+        giftItemComposites.push(giftItemcomposite);
+      }
+    })
   }
 
-  gifts.forEach( g => {
-    var fromUserResult = userDb.findFirstByID(g.from);
-    var toUserResult = userDb.findFirstByID(g.to);
-    var itemResult = itemDb.findFirstByID(g.item);
-
-    // TODO: move error messages to somewhere not in the name :(
-    var giftComposite = {
-      id: g.id,
-      from: fromUserResult.success ? fromUserResult.entity : { name: `Unable to load User with ID ${g.from}!`},
-      to: toUserResult.success ? toUserResult.entity : { name: `Unable to load User with ID ${g.to}!`},
-      item: itemResult.success ? itemResult.entity : { name: `Unable to load Item with ID ${g.item}!`},
-      date: g.date,
-      received: g.received
-    }
-    giftComposites.push(giftComposite);
-  });
-  return giftComposites;  
+  return giftItemComposites;
 }
+
+function giftHasBeenSentToday(giftItemComposites)  {
+  var giftHasBeenSentToday = false;
+
+  giftItemComposites.forEach( gic => {
+    var today = new Date();
+    if (!giftHasBeenSentToday && gic.gift.date === today.toLocaleDateString("en-US")) {
+      giftHasBeenSentToday = true;
+    }
+  });
+
+  return giftHasBeenSentToday;
+}
+
+function anyGiftUnreceived(friendGiftItemComposites) {
+  var hasAnyGiftUnreceived = false;
+
+  friendGiftItemComposites.forEach( f => {
+    if (!hasAnyGiftUnreceived) {
+      var received = f.giftItemCompositesSentByFriend.map( gic => gic.gift.received );
+
+      if (received != undefined && received.includes(false)) {
+        hasAnyGiftUnreceived = true;
+      }
+    }
+  });
+
+  return hasAnyGiftUnreceived;
+}
+
+function anyGiftUnsentToday(friendGiftItemComposites) {
+  var hasAnyGiftUnsentToday = false;
+
+  friendGiftItemComposites.forEach( f => {
+    if (!hasAnyGiftUnsentToday && !f.giftHasBeenSentToFriendToday) {
+      hasAnyGiftUnsentToday = true;
+    }
+  });
+
+  return hasAnyGiftUnsentToday;
+}
+
+
+
 
 module.exports = router;

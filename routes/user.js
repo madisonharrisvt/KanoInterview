@@ -86,7 +86,8 @@ function loadGiftCompositesByGifts(gifts) {
       from: fromUserResult.success ? fromUserResult.entity : { name: `Unable to load User with ID ${g.from}!`},
       to: toUserResult.success ? toUserResult.entity : { name: `Unable to load User with ID ${g.to}!`},
       item: itemResult.success ? itemResult.entity : { name: `Unable to load Item with ID ${g.item}!`},
-      date: date.toLocaleDateString("en-US")
+      date: date.toLocaleDateString("en-US"),
+      received: g.received
     }
     giftComposites.push(giftComposite);
   });

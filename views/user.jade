@@ -31,6 +31,13 @@ block content
           td Item: #{gift.item.name}
         tr
           td Date Sent: #{gift.date}
+        tr
+          td
+            form(action=`/gift/${gift.id}`, method="post")
+              if !gift.received
+                input(type="submit" value="Receive")
+              else
+                input(type="submit" value="Receive" disabled="diabled")
   else
     p No gifts received!
 

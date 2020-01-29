@@ -17,6 +17,22 @@ block content
               option(value="2") 2
           td
             input( type="submit")
+  
+  h2="Gifts Received"
+  ul
+  if giftsReceived != undefined && giftsReceived.length > 0
+    each gift in giftsReceived
+      table 
+        tr
+          td From: #{gift.from.name}
+        tr
+          td To: #{gift.to.name}
+        tr
+          td Item: #{gift.item.name}
+        tr
+          td Date Sent: #{gift.date}
+  else
+    p No gifts received!
 
   h2="Gifts Sent"
   ul

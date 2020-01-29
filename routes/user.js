@@ -20,8 +20,9 @@ router.get('/:id', function(req, res, next) {
     // load user's friends
     var user = userResult.entity;
     var friends = loadFriendsByUser(user);
-    var giftsSent = loadGiftCompositesSentByUser(user);
-    res.render('user', { user: user, img: user.img, friends: friends, giftsSent: giftsSent });
+    var giftsSent = loadGiftsSentByUser(user);
+    var giftsReceived = loadGiftsReceivedByUser(user);
+    res.render('user', { user: user, img: user.img, friends: friends, giftsSent: giftsSent, giftsReceived: giftsReceived });
   }
   // handle errors
   else {
@@ -35,17 +36,17 @@ router.get('/:id', function(req, res, next) {
  *******************************************************/
 
 // load all Gifts from User id regardless if result is empty/null/undefinied/incorrect
-function loadAllGiftsFromUserId(id) {
-  var giftsResult = giftDb.find( { from: id });
+function loadGiftsSentByUser(user) {
+  var gifts = giftDb.find( { from: user.id });
   
-  if (giftsResult != undefined)
-  {
-    return { gifts: giftsResult, success: true }
-  }
-  else
-  {
-    return { gifts: giftsResult, success: false }
-  }
+  return loadGiftCompositesByGifts(gifts);
+}
+
+// load all Gifts to User id regardless if result is empty/null/undefinied/incorrect
+function loadGiftsReceivedByUser(user) {
+  var gifts = giftDb.find( { to: user.id });
+  
+  return loadGiftCompositesByGifts(gifts);
 }
 
 function loadFriendsByUser(user) {
@@ -65,19 +66,19 @@ function loadFriendsByUser(user) {
   return friends;
 }
 
-function loadGiftCompositesSentByUser(user) {
-  var sentGiftsResult = loadAllGiftsFromUserId(user.id);
-  var giftsSent = [];
+function loadGiftCompositesByGifts(gifts) {
+  var giftComposites = [];
   
   // don't process gifts if they don't exist
-  if (!sentGiftsResult.success || sentGiftsResult.length === 0) {
-    return giftsSent;
+  if (gifts == undefined || gifts.length === 0) {
+    return gifts;
   }
 
-  sentGiftsResult.gifts.forEach( g => {
+  gifts.forEach( g => {
     var fromUserResult = userDb.findFirstByID(g.from);
     var toUserResult = userDb.findFirstByID(g.to);
     var itemResult = itemDb.findFirstByID(g.item);
+    var date = new Date(g.date);
 
     // TODO: move error messages to somewhere not in the name :(
     var giftComposite = {
@@ -85,11 +86,11 @@ function loadGiftCompositesSentByUser(user) {
       from: fromUserResult.success ? fromUserResult.entity : { name: `Unable to load User with ID ${g.from}!`},
       to: toUserResult.success ? toUserResult.entity : { name: `Unable to load User with ID ${g.to}!`},
       item: itemResult.success ? itemResult.entity : { name: `Unable to load Item with ID ${g.item}!`},
-      date: g.date.toLocaleDateString("en-US")
+      date: date.toLocaleDateString("en-US")
     }
-    giftsSent.push(giftComposite);
+    giftComposites.push(giftComposite);
   });
-  return giftsSent;  
+  return giftComposites;  
 }
 
 module.exports = router;

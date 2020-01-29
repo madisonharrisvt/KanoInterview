@@ -7,16 +7,16 @@ block content
   h2="Friends"
   
   table
-    each friend in friends
-      form(action=`/gift/${user.id}.${friend.id}`, method="post")
+    each friendGiftComposite in friendGiftItemComposites
+      form(action=`/gift/${user.id}.${friendGiftComposite.friend.id}`, method="post")
         tr
-          td= friend.name
+          td= friendGiftComposite.friend.name
           td
             select(name="item")
               option(value="1") 1
               option(value="2") 2
           td
-            if friend.hasGiftUnsent
+            if !friendGiftComposite.giftHasBeenSentToFriendToday
               input( type="submit")
             else 
               input( type="submit", disabled="diabled")
@@ -35,45 +35,28 @@ block content
             input( type="submit", disabled="diabled")
             
   h2="Gifts Received"
-  ul
-  if giftsReceived != undefined && giftsReceived.length > 0
-    each gift in giftsReceived
-      table 
-        tr
-          td From: #{gift.from.name}
-        tr
-          td To: #{gift.to.name}
-        tr
-          td Item: #{gift.item.name}
-        tr
-          td Date Sent: #{gift.date}
-        tr
-          td
-            form(action=`/gift/${gift.id}`, method="post")
-              if !gift.received
-                input(type="submit" value="Receive")
-              else
-                input(type="submit" value="Receive" disabled="diabled")
-    form(action=`/receive-all-gifts/${user.id}`, method="post")
-      if allowAllGiftReceive
-        input(type="submit" value="Receive All")
-      else
-        input(type="submit" value="Receive All" disabled="diabled")
-  else
-    p No gifts received!
-
-  h2="Gifts Sent"
-  ul
-  if giftsSent != undefined && giftsSent.length > 0
-    each gift in giftsSent
-      table 
-        tr
-          td From: #{gift.from.name}
-        tr
-          td To: #{gift.to.name}
-        tr
-          td Item: #{gift.item.name}
-        tr
-          td Date Sent: #{gift.date}
-  else
-    p No gifts sent!
+  each friendGiftComposite in friendGiftItemComposites
+    if friendGiftComposite.giftItemCompositesSentByFriend != undefined && friendGiftComposite.giftItemCompositesSentByFriend.length > 0
+      each giftItemComposite in friendGiftComposite.giftItemCompositesSentByFriend
+        table 
+          tr
+            td From: #{friendGiftComposite.friend.name}
+          tr
+            td To: #{user.name}
+          tr
+            td Item: #{giftItemComposite.item.name}
+          tr
+            td Date Sent: #{giftItemComposite.gift.date}
+          tr
+            td
+              form(action=`/gift/${giftItemComposite.gift.id}`, method="post")
+                if !giftItemComposite.gift.received
+                  input(type="submit" value="Receive")
+                else
+                  input(type="submit" value="Receive" disabled="diabled")
+  form(action=`/receive-all-gifts/${user.id}`, method="post")
+    if allowAllGiftReceive
+      input(type="submit" value="Receive All")
+    else
+      input(type="submit" value="Receive All" disabled="diabled")
+  

@@ -22,7 +22,15 @@ router.get('/:id', function(req, res, next) {
     var friends = loadFriendsByUser(user);
     var giftsSent = loadGiftsSentByUser(user);
     var giftsReceived = loadGiftsReceivedByUser(user);
-    res.render('user', { user: user, img: user.img, friends: friends, giftsSent: giftsSent, giftsReceived: giftsReceived });
+    var allowAllGiftReceive = anyGiftUnreceived(giftsReceived);
+    res.render('user', { 
+      user: user, 
+      img: user.img, 
+      friends: friends, 
+      giftsSent: giftsSent, 
+      giftsReceived: giftsReceived, 
+      allowAllGiftReceive: allowAllGiftReceive 
+    });
   }
   // handle errors
   else {
@@ -47,6 +55,18 @@ function loadGiftsReceivedByUser(user) {
   var gifts = giftDb.find( { to: user.id });
   
   return loadGiftCompositesByGifts(gifts);
+}
+
+function anyGiftUnreceived(gifts) {
+  var hasGiftUnreceived = false;
+
+  gifts.forEach( g => {
+    if (!hasGiftUnreceived && !g.received) {
+      hasGiftUnreceived = true;
+    }
+  });
+
+  return hasGiftUnreceived;
 }
 
 function loadFriendsByUser(user) {

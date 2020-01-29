@@ -21,7 +21,7 @@ router.get('/:id', function(req, res, next) {
     var user = userResult.entity;
     var friends = loadFriendsByUser(user);
     var giftsSent = loadGiftCompositesSentByUser(user);
-    res.render('user', { title: user.name, img: user.img, friends: friends, giftsSent: giftsSent });
+    res.render('user', { user: user, img: user.img, friends: friends, giftsSent: giftsSent });
   }
   // handle errors
   else {
@@ -85,7 +85,7 @@ function loadGiftCompositesSentByUser(user) {
       from: fromUserResult.success ? fromUserResult.entity : { name: `Unable to load User with ID ${g.from}!`},
       to: toUserResult.success ? toUserResult.entity : { name: `Unable to load User with ID ${g.to}!`},
       item: itemResult.success ? itemResult.entity : { name: `Unable to load Item with ID ${g.item}!`},
-      date: g.date
+      date: g.date.toLocaleDateString("en-US")
     }
     giftsSent.push(giftComposite);
   });

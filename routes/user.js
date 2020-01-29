@@ -13,7 +13,7 @@ router.get('/:id', function(req, res, next) {
   var id = req.params.id;
 
   // get user by id
-  var userResult = loadFirstEntityByDbAndID(userDb,id);
+  var userResult = userDb.findFirstByID(id);
 
   // validate user
   if (userResult.success) {
@@ -33,20 +33,6 @@ router.get('/:id', function(req, res, next) {
 /******************************************************
  *  Helper functions
  *******************************************************/
-// load first User by id regardless if result is empty/null/undefinied/incorrect
-function loadFirstEntityByDbAndID(db, id) {
-  var entityResult = db.find( { id: id });
-  var entity = entityResult[0];
-  
-  if (entity != undefined && entity.id == id)
-  {
-    return { entity: entity, success: true }
-  }
-  else
-  {
-    return { entity: entity, success: false }
-  }
-}
 
 // load all Gifts from User id regardless if result is empty/null/undefinied/incorrect
 function loadAllGiftsFromUserId(id) {
@@ -68,7 +54,7 @@ function loadFriendsByUser(user) {
 
   // load friends by user friend IDs
   friendIds.forEach( id => {
-    var friendResult = loadFirstEntityByDbAndID(userDb, id)
+    var friendResult = userDb.findFirstByID(id);
 
     // validate
     if (friendResult.success) {
@@ -89,9 +75,9 @@ function loadGiftCompositesSentByUser(user) {
   }
 
   sentGiftsResult.gifts.forEach( g => {
-    var fromUserResult = loadFirstEntityByDbAndID(userDb, g.from);
-    var toUserResult = loadFirstEntityByDbAndID(userDb, g.to);
-    var itemResult = loadFirstEntityByDbAndID(itemDb, g.item);
+    var fromUserResult = userDb.findFirstByID(g.from);
+    var toUserResult = userDb.findFirstByID(g.to);
+    var itemResult = itemDb.findFirstByID(g.item);
 
     // TODO: move error messages to somewhere not in the name :(
     var giftComposite = {

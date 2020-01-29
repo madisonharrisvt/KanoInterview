@@ -25,3 +25,6 @@ block content
           td Date Sent: #{gift.date}
   else
     p No gifts sent!
+  
+  form(action="/gift/1.2.1", method="post")
+    input(type="submit", value="Send a gift!")

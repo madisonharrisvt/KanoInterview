@@ -19,7 +19,7 @@ router.post('/:from.:to', function(req, res, next) {
     from: from,
     to: to,
     item: item,
-    date: date,
+    date: date.toLocaleDateString("en-US"),
     received: false
   }
 

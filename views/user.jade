@@ -16,8 +16,24 @@ block content
               option(value="1") 1
               option(value="2") 2
           td
+            if friend.hasGiftUnsent
+              input( type="submit")
+            else 
+              input( type="submit", disabled="diabled")
+
+    form(action=`/send-all-gifts/${user.id}`, method="post")
+      tr
+        td= "Send All"
+        td
+          select(name="item")
+            option(value="1") 1
+            option(value="2") 2
+        td
+          if allowAllGiftSend
             input( type="submit")
-  
+          else 
+            input( type="submit", disabled="diabled")
+            
   h2="Gifts Received"
   ul
   if giftsReceived != undefined && giftsReceived.length > 0
@@ -38,7 +54,7 @@ block content
                 input(type="submit" value="Receive")
               else
                 input(type="submit" value="Receive" disabled="diabled")
-    form(action=`/all-gifts/${user.id}`, method="post")
+    form(action=`/receive-all-gifts/${user.id}`, method="post")
       if allowAllGiftReceive
         input(type="submit" value="Receive All")
       else

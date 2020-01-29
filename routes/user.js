@@ -16,27 +16,27 @@ router.get('/:id', function(req, res, next) {
   var userResult = userDb.findFirstByID(id);
 
   // validate user
-  if (userResult.success) {
-    // load user's friends
-    var user = userResult.entity;
-    var friends = loadFriendsByUser(user);
-    var giftsSent = loadGiftsSentByUser(user);
-    var giftsReceived = loadGiftsReceivedByUser(user);
-    var allowAllGiftReceive = anyGiftUnreceived(giftsReceived);
-    res.render('user', { 
-      user: user, 
-      img: user.img, 
-      friends: friends, 
-      giftsSent: giftsSent, 
-      giftsReceived: giftsReceived, 
-      allowAllGiftReceive: allowAllGiftReceive 
-    });
+  if (!userResult.success) {
+    throw new Error(`Unable to find User with ID ${id}`);
   }
-  // handle errors
-  else {
-    res.render('user', { title: `Unable to find user with ID ${id}!`, img: "", friends: [], giftsSent: [] });
-    return;
-  }
+
+  // load user's friends
+  var user = userResult.entity;
+  var friends = loadFriendCompositesByUser(user);
+  var giftsSent = loadGiftsSentByUser(user);
+  var giftsReceived = loadGiftsReceivedByUser(user);
+  var allowAllGiftReceive = anyGiftUnreceived(giftsReceived);
+  var allowAllGiftSend = anyGiftUnsentToAllFriendsTodayByUser(friends, user);
+
+  res.render('user', { 
+    user: user, 
+    img: user.img, 
+    friends: friends, 
+    giftsSent: giftsSent, 
+    giftsReceived: giftsReceived, 
+    allowAllGiftReceive: allowAllGiftReceive,
+    allowAllGiftSend: allowAllGiftSend
+  });
 });
 
 /******************************************************
@@ -69,9 +69,31 @@ function anyGiftUnreceived(gifts) {
   return hasGiftUnreceived;
 }
 
-function loadFriendsByUser(user) {
+function giftUnsentToFriendTodayByUser(friend, user) {
+  var today = new Date();
+  var formattedToday = today.toLocaleDateString("en-US");
+  var sentGift = giftDb.find({ from: user.id, to: friend.id, date: formattedToday });
+
+  return sentGift != undefined && sentGift.length === 0
+}
+
+function anyGiftUnsentToAllFriendsTodayByUser(friends, user) {
+  var hasGiftUnsent = false;
+
+  friends.forEach( f => {
+    var hasGiftUnsentToFriendToday = giftUnsentToFriendTodayByUser(f, user);
+
+    if (!hasGiftUnsent && hasGiftUnsentToFriendToday) {
+      hasGiftUnsent = true;
+    }
+  });
+
+  return hasGiftUnsent;
+}
+
+function loadFriendCompositesByUser(user) {
   var friendIds = user.friends;
-  var friends = [];
+  var friendComposites = [];
 
   // load friends by user friend IDs
   friendIds.forEach( id => {
@@ -79,11 +101,16 @@ function loadFriendsByUser(user) {
 
     // validate
     if (friendResult.success) {
-      friends.push(friendResult.entity);
+      var friend = friendResult.entity;
+      var hasGiftUnsentToFriendToday = giftUnsentToFriendTodayByUser(friend, user);
+      var friendComposite = friend;
+      friendComposite["hasGiftUnsent"] = hasGiftUnsentToFriendToday;
+
+      friendComposites.push(friendComposite);
     }
   });
 
-  return friends;
+  return friendComposites;
 }
 
 function loadGiftCompositesByGifts(gifts) {
@@ -98,7 +125,6 @@ function loadGiftCompositesByGifts(gifts) {
     var fromUserResult = userDb.findFirstByID(g.from);
     var toUserResult = userDb.findFirstByID(g.to);
     var itemResult = itemDb.findFirstByID(g.item);
-    var date = new Date(g.date);
 
     // TODO: move error messages to somewhere not in the name :(
     var giftComposite = {
@@ -106,7 +132,7 @@ function loadGiftCompositesByGifts(gifts) {
       from: fromUserResult.success ? fromUserResult.entity : { name: `Unable to load User with ID ${g.from}!`},
       to: toUserResult.success ? toUserResult.entity : { name: `Unable to load User with ID ${g.to}!`},
       item: itemResult.success ? itemResult.entity : { name: `Unable to load Item with ID ${g.item}!`},
-      date: date.toLocaleDateString("en-US"),
+      date: g.date,
       received: g.received
     }
     giftComposites.push(giftComposite);

@@ -1,14 +1,22 @@
 extends layout
 
 block content
-  h1= title
+  h1= user.name
   img(src=img)
 
   h2="Friends"
-  ul
-  each friend in friends
-    li 
-      a(href="/user/"+friend.id) #{friend.name}
+  
+  table
+    each friend in friends
+      form(action=`/gift/${user.id}.${friend.id}`, method="post")
+        tr
+          td= friend.name
+          td
+            select(name="item")
+              option(value="1") 1
+              option(value="2") 2
+          td
+            input( type="submit")
 
   h2="Gifts Sent"
   ul
@@ -25,6 +33,3 @@ block content
           td Date Sent: #{gift.date}
   else
     p No gifts sent!
-  
-  form(action="/gift/1.2.1", method="post")
-    input(type="submit", value="Send a gift!")

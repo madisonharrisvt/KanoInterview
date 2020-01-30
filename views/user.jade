@@ -1,62 +1,77 @@
 extends layout
 
 block content
-  h1= user.name
-  img(src=img)
-
-  h2="Friends"
-  
-  table
-    each friendGiftComposite in friendGiftItemComposites
-      form(action=`/gift/${user.id}.${friendGiftComposite.friend.id}`, method="post")
-        tr
-          td= friendGiftComposite.friend.name
-          td
-            select(name="item")
-              option(value="1") 1
-              option(value="2") 2
-          td
-            if !friendGiftComposite.giftHasBeenSentToFriendToday
-              input( type="submit")
-            else 
-              input( type="submit", disabled="diabled")
-
-    form(action=`/send-all-gifts/${user.id}`, method="post")
+  div.header
+    table
       tr
-        td= "Send All"
         td
-          select(name="item")
-            option(value="1") 1
-            option(value="2") 2
+          img.enabled(src=user.img)
         td
-          if allowAllGiftSend
-            input( type="submit")
-          else 
-            input( type="submit", disabled="diabled")
-            
-  h2="Gifts Received"
-  each friendGiftComposite in friendGiftItemComposites
-    if friendGiftComposite.giftItemCompositesSentByFriend != undefined && friendGiftComposite.giftItemCompositesSentByFriend.length > 0
-      each giftItemComposite in friendGiftComposite.giftItemCompositesSentByFriend
+          h1= user.name
+  
+  div.send
+    h2="Friends"
+    table
+      each friendGiftComposite in friendGiftItemComposites
+        form(action=`/gift/${user.id}.${friendGiftComposite.friend.id}`, method="post")
+          tr
+            td
+              if !friendGiftComposite.giftHasBeenSentToFriendToday
+                img.enabled(src=friendGiftComposite.friend.img )
+              else
+                img.disabled(src=friendGiftComposite.friend.img )
+            td= friendGiftComposite.friend.name
+            td
+              select(name="item")
+                each item in items
+                  option(value=`${item.id}`) #{item.name}
+            td
+              if !friendGiftComposite.giftHasBeenSentToFriendToday
+                input( type="submit", value="Send")
+              else 
+                input( type="submit", value="Send", disabled="diabled")
+
+      form(action=`/send-all-gifts/${user.id}`, method="post")
         table 
           tr
-            td From: #{friendGiftComposite.friend.name}
+            td= "Send All"
+            td
+              select(name="item")
+                each item in items
+                  option(value=`${item.id}`) #{item.name}
+            td
+              if allowAllGiftSend
+                input( type="submit", value="Send All")
+              else 
+                input( type="submit", value="Send All", disabled="diabled")
+
+  div.receive         
+    h2="Gifts Received"
+    each friendGiftComposite in friendGiftItemComposites
+      if friendGiftComposite.giftItemCompositesSentByFriend != undefined && friendGiftComposite.giftItemCompositesSentByFriend.length > 0
+      table 
+        each giftItemComposite in friendGiftComposite.giftItemCompositesSentByFriend
           tr
-            td To: #{user.name}
-          tr
-            td Item: #{giftItemComposite.item.name}
-          tr
-            td Date Sent: #{giftItemComposite.gift.date}
-          tr
+            td 
+              if giftItemComposite.gift.received
+                img.disabled(src=friendGiftComposite.friend.img)
+              else
+                img.enabled(src=friendGiftComposite.friend.img)
+              
+            td= friendGiftComposite.friend.name
+            td
+              img.small(src=giftItemComposite.item.img)
+            td= giftItemComposite.item.name
+            td #{giftItemComposite.gift.date}
             td
               form(action=`/gift/${giftItemComposite.gift.id}`, method="post")
                 if !giftItemComposite.gift.received
                   input(type="submit" value="Receive")
                 else
                   input(type="submit" value="Receive" disabled="diabled")
-  form(action=`/receive-all-gifts/${user.id}`, method="post")
-    if allowAllGiftReceive
-      input(type="submit" value="Receive All")
-    else
-      input(type="submit" value="Receive All" disabled="diabled")
+    form(action=`/receive-all-gifts/${user.id}`, method="post")
+      if allowAllGiftReceive
+        input(type="submit" value="Receive All")
+      else
+        input(type="submit" value="Receive All" disabled="diabled")
   

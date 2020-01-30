@@ -25,13 +25,14 @@ router.get('/:id', function(req, res, next) {
   var friendGiftItemComposites = loadFriendGiftItemCompositesByUser(user);
   var allowAllGiftReceive = anyGiftUnreceived(friendGiftItemComposites);
   var allowAllGiftSend = anyGiftUnsentToday(friendGiftItemComposites);
+  var items = itemDb.data;
 
   res.render('user', { 
     user: user, 
-    img: user.img, 
     friendGiftItemComposites: friendGiftItemComposites, 
     allowAllGiftReceive: allowAllGiftReceive,
-    allowAllGiftSend: allowAllGiftSend
+    allowAllGiftSend: allowAllGiftSend,
+    items: items
   });
 });
 
